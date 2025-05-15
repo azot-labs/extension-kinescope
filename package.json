@@ -1,0 +1,34 @@
+{
+  "name": "kinescope",
+  "version": "0.0.2",
+  "homepage": "https://kinescope.ru/",
+  "config": {
+    "title": "Kinescope",
+    "icon": "https://ucarecdn.com/79bc98f6-a970-4f04-b0c0-eff36d6a2b4a/"
+  },
+  "keywords": [
+    "Video Hostings"
+  ],
+  "author": {
+    "name": "Streamyx",
+    "url": "https://streamyx.tv/"
+  },
+  "contributors": [
+    {
+      "name": "Vitaly Gashkov",
+      "email": "vitalygashkov@vk.com",
+      "url": "https://github.com/vitalygashkov"
+    }
+  ],
+  "license": "MIT",
+  "main": "kinescope.js",
+  "files": [
+    "kinescope.js"
+  ],
+  "scripts": {},
+  "devDependencies": {
+    "@streamyx/api": "^0.2.10",
+    "@types/node": "^22.15.17",
+    "typescript": "^5.8.3"
+  }
+}
