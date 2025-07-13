@@ -1,3 +1,0 @@
-include:
-  - project: streamyx-extensions/ci
-    file: .gitlab-ci.yml
