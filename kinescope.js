@@ -1,6 +1,6 @@
 'use strict';
 
-const { defineExtension } = require('@streamyx/api');
+const { defineExtension } = require('azot');
 
 /**
  * Widevine example on a third-party service:

@@ -7,7 +7,7 @@
     "icon": "https://ucarecdn.com/79bc98f6-a970-4f04-b0c0-eff36d6a2b4a/"
   },
   "keywords": [
-    "Video Hostings"
+    "video-hostings"
   ],
   "author": {
     "name": "Azot",
@@ -27,8 +27,8 @@
   ],
   "scripts": {},
   "devDependencies": {
-    "@streamyx/api": "^0.2.10",
-    "@types/node": "^22.15.17",
+    "@types/node": "^24.0.15",
+    "azot": "^0.9.0",
     "typescript": "^5.8.3"
   }
 }
