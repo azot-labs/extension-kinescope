@@ -17,7 +17,6 @@ const { defineExtension } = require('azot');
  */
 
 module.exports = defineExtension({
-  name: 'kinescope',
   fetchContentMetadata: async (url, args) => {
     const headers = args.header;
     const response = await fetch(url, { headers });
