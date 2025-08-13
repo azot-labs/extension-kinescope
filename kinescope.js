@@ -1,6 +1,4 @@
-'use strict';
-
-const { defineExtension } = require('azot');
+import { defineExtension } from 'azot';
 
 /**
  * Widevine example on a third-party service:
@@ -16,8 +14,8 @@ const { defineExtension } = require('azot');
  * Command: streamyx https://kinescope.io/embed/202544377
  */
 
-module.exports = defineExtension({
-  fetchContentMetadata: async (url, args) => {
+export default defineExtension({
+  async fetchContentMetadata(url, args) {
     const headers = args.header;
     const response = await fetch(url, { headers });
     const data = await response.text();
