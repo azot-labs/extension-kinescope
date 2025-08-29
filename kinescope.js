@@ -1,5 +1,10 @@
 import { defineExtension } from 'azot';
 
+const KINESCOPE_BASE_URL = 'https://kinescope.io';
+const KINESCOPE_MASTER_PLAYLIST_URL = 'https://kinescope.io/{video_id}/master.mpd';
+const KINESCOPE_CLEARKEY_LICENSE_URL = 'https://license.kinescope.io/v1/vod/{video_id}/acquire/clearkey?token=';
+const DEFAULT_REFERER = 'https://kinescope.io';
+
 /**
  * Widevine example on a third-party service:
  * Page: https://nd.umschool.net/lesson/38700
@@ -19,16 +24,21 @@ export default defineExtension({
     const headers = args.header;
     const response = await fetch(url, { headers });
     const data = await response.text();
+    const id = data.includes('id: "') ? data.split('id: "')[1].split('"')[0] : undefined;
 
     const title = data.split('<title>')[1]?.split('</title>')[0];
     const playerOptionsString = data.split('playerOptions = ')[1]?.split('};')[0] + '}';
     const playerOptions = eval(`(${playerOptionsString})`);
     const playlist = playerOptions.playlist[0];
-    const manifestUrl = playlist.sources.shakadash?.src || playlist.sources.shakahls;
 
     const drm = {};
     const clearkey = playlist.drm.clearkey;
     const widevine = playlist.drm.widevine;
+
+    const manifestUrl = id
+      ? KINESCOPE_MASTER_PLAYLIST_URL.replace('{video_id}', id)
+      : playlist.sources.shakadash?.src || playlist.sources.shakahls;
+
     if (widevine) {
       drm.server = widevine.licenseUrl;
     } else if (clearkey) {
