@@ -4,7 +4,11 @@
   "homepage": "https://kinescope.ru/",
   "config": {
     "title": "Kinescope",
-    "icon": "https://ucarecdn.com/79bc98f6-a970-4f04-b0c0-eff36d6a2b4a/"
+    "tag": "KS",
+    "icon": "https://ucarecdn.com/79bc98f6-a970-4f04-b0c0-eff36d6a2b4a/",
+    "permissions": [
+      "drm"
+    ]
   },
   "keywords": [
     "video-hostings"
