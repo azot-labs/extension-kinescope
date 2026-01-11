@@ -24,7 +24,6 @@ export default defineExtension({
     const headers = args.header;
     const response = await fetch(url, { headers });
     const data = await response.text();
-    const id = data.includes('id: "') ? data.split('id: "')[1].split('"')[0] : undefined;
 
     const title = data.split('<title>')[1]?.split('</title>')[0];
     const playerOptionsString = data.split('playerOptions = ')[1]?.split('};')[0] + '}';
@@ -35,9 +34,11 @@ export default defineExtension({
     const clearkey = playlist.drm.clearkey;
     const widevine = playlist.drm.widevine;
 
+    const id = playlist.id || (data.includes('id: "') ? data.split('id: "')[1].split('"')[0] : undefined);
+
     const manifestUrl = id
       ? KINESCOPE_MASTER_PLAYLIST_URL.replace('{video_id}', id)
-      : playlist.sources.shakadash?.src || playlist.sources.shakahls;
+      : playlist.sources.shakadash?.src || playlist.sources.shakahls?.src;
 
     if (widevine) {
       drm.server = widevine.licenseUrl;
@@ -45,6 +46,10 @@ export default defineExtension({
       const licenseUrl = clearkey.licenseUrl;
       const manifest = await fetch(manifestUrl).then((r) => r.text());
       const kid = manifest.split('default_KID="')[1]?.split('"')[0]?.replaceAll('-', '');
+      if (!kid) {
+        console.error('KID not found');
+        return [];
+      }
       const encodedKid = Buffer.from(kid, 'hex').toString('base64').replaceAll('=', '');
       const response = await fetch(licenseUrl, {
         method: 'POST',
