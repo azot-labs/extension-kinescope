@@ -34,8 +34,8 @@
     "build": "azt build"
   },
   "devDependencies": {
-    "@types/node": "^24.2.1",
+    "@types/node": "^25.3.2",
     "azot": "^0.9.3",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   }
 }
