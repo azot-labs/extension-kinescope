@@ -28,41 +28,52 @@ export default defineExtension({
     const title = data.split('<title>')[1]?.split('</title>')[0];
     const playerOptionsString = data.split('playerOptions = ')[1]?.split('};')[0] + '}';
     const playerOptions = eval(`(${playerOptionsString})`);
-    const playlist = playerOptions.playlist[0];
 
-    const drm = {};
-    const clearkey = playlist.drm.clearkey;
-    const widevine = playlist.drm.widevine;
+    const selectedEpisodes = Array.from(args.episodes.values()).flatMap(seasonEpisodes => Array.from(seasonEpisodes.values()))
+    const results = [];
+    const playlists = playerOptions.playlist ?? [];
 
-    const id = playlist.id || (data.includes('id: "') ? data.split('id: "')[1].split('"')[0] : undefined);
+    for (const playlist of playlists) {
+      const drm = {};
+      const clearkey = playlist.drm.clearkey;
+      const widevine = playlist.drm.widevine;
 
-    const { searchParams } = new URL(playlist.sources.shakadash?.src || playlist.sources.shakahls?.src);
-    const masterUrl = `${KINESCOPE_MASTER_PLAYLIST_URL.replace('{video_id}', id)}?${searchParams.toString()}`;
-    const manifestUrl = id
-      ? masterUrl
-      : playlist.sources.shakadash?.src || playlist.sources.shakahls?.src;
+      const index = playlists.indexOf(playlist);
+      const episodeNumber = index + 1;
+      if (selectedEpisodes.length && !selectedEpisodes.includes(episodeNumber)) continue;
 
-    if (widevine) {
-      drm.server = widevine.licenseUrl;
-    } else if (clearkey) {
-      const licenseUrl = clearkey.licenseUrl;
-      const manifest = await fetch(manifestUrl).then((r) => r.text());
-      const kid = manifest.split('default_KID="')[1]?.split('"')[0]?.replaceAll('-', '');
-      if (!kid) {
-        console.error('KID not found');
-        return [];
+      const id = playlist.id || (data.includes('id: "') ? data.split('id: "')[1].split('"')[0] : undefined);
+
+      const { searchParams } = new URL(playlist.sources.shakadash?.src || playlist.sources.shakahls?.src);
+      const masterUrl = `${KINESCOPE_MASTER_PLAYLIST_URL.replace('{video_id}', id)}?${searchParams.toString()}`;
+      const manifestUrl = id
+        ? masterUrl
+        : playlist.sources.shakadash?.src || playlist.sources.shakahls?.src;
+
+      if (widevine) {
+        drm.server = widevine.licenseUrl;
+      } else if (clearkey) {
+        const licenseUrl = clearkey.licenseUrl;
+        const manifest = await fetch(manifestUrl).then((r) => r.text());
+        const kid = manifest.split('default_KID="')[1]?.split('"')[0]?.replaceAll('-', '');
+        if (!kid) {
+          console.error('KID not found');
+          return [];
+        }
+        const encodedKid = Buffer.from(kid, 'hex').toString('base64').replaceAll('=', '');
+        const response = await fetch(licenseUrl, {
+          method: 'POST',
+          headers: { Referer: 'https://kinescope.io/' },
+          body: JSON.stringify({ kids: [encodedKid], type: 'temporary' }),
+        }).then((r) => r.json());
+        const encodedKey = response['keys'][0]['k'];
+        const key = Buffer.from(encodedKey + '==', 'base64').toString('hex');
+        drm.keys = [{ kid, key }];
       }
-      const encodedKid = Buffer.from(kid, 'hex').toString('base64').replaceAll('=', '');
-      const response = await fetch(licenseUrl, {
-        method: 'POST',
-        headers: { Referer: 'https://kinescope.io/' },
-        body: JSON.stringify({ kids: [encodedKid], type: 'temporary' }),
-      }).then((r) => r.json());
-      const encodedKey = response['keys'][0]['k'];
-      const key = Buffer.from(encodedKey + '==', 'base64').toString('hex');
-      drm.keys = [{ kid, key }];
+
+      results.push({ id, title: playlist.title || title, source: { url: manifestUrl, drm } });
     }
 
-    return [{ title, source: { url: manifestUrl, drm } }];
+    return results;
   },
 });
