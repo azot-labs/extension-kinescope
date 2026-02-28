@@ -36,8 +36,10 @@ export default defineExtension({
 
     const id = playlist.id || (data.includes('id: "') ? data.split('id: "')[1].split('"')[0] : undefined);
 
+    const { searchParams } = new URL(playlist.sources.shakadash?.src || playlist.sources.shakahls?.src);
+    const masterUrl = `${KINESCOPE_MASTER_PLAYLIST_URL.replace('{video_id}', id)}?${searchParams.toString()}`;
     const manifestUrl = id
-      ? KINESCOPE_MASTER_PLAYLIST_URL.replace('{video_id}', id)
+      ? masterUrl
       : playlist.sources.shakadash?.src || playlist.sources.shakahls?.src;
 
     if (widevine) {
