@@ -1,6 +1,6 @@
 {
   "name": "kinescope",
-  "version": "0.0.12",
+  "version": "1.0.0",
   "homepage": "https://kinescope.ru/",
   "config": {
     "title": "Kinescope",
@@ -15,7 +15,7 @@
   ],
   "author": {
     "name": "Azot",
-    "url": "https://azot.so/"
+    "url": "https://azot.mov/"
   },
   "contributors": [
     {
@@ -25,7 +25,7 @@
     }
   ],
   "license": "MIT",
-  "main": "dist/kinescope.js",
+  "main": "dist/kinescope.cjs",
   "files": [
     "dist"
   ],
@@ -34,8 +34,11 @@
     "build": "azt build"
   },
   "devDependencies": {
-    "@types/node": "^25.3.2",
-    "azot": "^0.9.3",
+    "@types/node": "^25.5.0",
+    "azot": "^5.0.0-alpha.18",
     "typescript": "^5.9.3"
+  },
+  "engines": {
+    "azot": ">=4.3.38"
   }
 }
