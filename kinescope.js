@@ -35,8 +35,8 @@ export default defineExtension({
 
     for (const playlist of playlists) {
       const drm = {};
-      const clearkey = playlist.drm.clearkey;
-      const widevine = playlist.drm.widevine;
+      const clearkey = playlist.drm?.clearkey;
+      const widevine = playlist.drm?.widevine;
 
       const index = playlists.indexOf(playlist);
       const episodeNumber = index + 1;
