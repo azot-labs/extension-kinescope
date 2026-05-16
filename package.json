@@ -35,8 +35,8 @@
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
-    "azot": "^5.0.0-alpha.18",
-    "typescript": "^5.9.3"
+    "azot": "^5.0.0-alpha.28",
+    "typescript": "^6.0.3"
   },
   "engines": {
     "azot": ">=4.3.38"

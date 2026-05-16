@@ -1,9 +1,7 @@
-import { defineExtension } from 'azot';
+import { defineExtension, Input, UrlSource } from 'azot';
 
-const KINESCOPE_BASE_URL = 'https://kinescope.io';
 const KINESCOPE_MASTER_PLAYLIST_URL = 'https://kinescope.io/{video_id}/master.mpd';
-const KINESCOPE_CLEARKEY_LICENSE_URL = 'https://license.kinescope.io/v1/vod/{video_id}/acquire/clearkey?token=';
-const DEFAULT_REFERER = 'https://kinescope.io';
+const DEFAULT_REFERER = 'https://kinescope.io/';
 
 /**
  * Widevine example on a third-party service:
@@ -20,7 +18,7 @@ const DEFAULT_REFERER = 'https://kinescope.io';
  */
 
 export default defineExtension({
-  async fetchContentMetadata(url, args) {
+  async resolveEntries(url, args) {
     const headers = args.header;
     const response = await fetch(url, { headers });
     const data = await response.text();
@@ -29,51 +27,89 @@ export default defineExtension({
     const playerOptionsString = data.split('playerOptions = ')[1]?.split('};')[0] + '}';
     const playerOptions = eval(`(${playerOptionsString})`);
 
-    const selectedEpisodes = Array.from(args.episodes.values()).flatMap(seasonEpisodes => Array.from(seasonEpisodes.values()))
+    const selectedEpisodes = Array.from(args.episodes?.values() ?? [])
+      .flatMap((seasonEpisodes) => Array.from(seasonEpisodes.values()));
     const results = [];
     const playlists = playerOptions.playlist ?? [];
 
-    for (const playlist of playlists) {
-      const drm = {};
+    for (const [index, playlist] of playlists.entries()) {
       const clearkey = playlist.drm?.clearkey;
       const widevine = playlist.drm?.widevine;
-
-      const index = playlists.indexOf(playlist);
       const episodeNumber = index + 1;
       if (selectedEpisodes.length && !selectedEpisodes.includes(episodeNumber)) continue;
 
       const id = playlist.id || (data.includes('id: "') ? data.split('id: "')[1].split('"')[0] : undefined);
-
-      const { searchParams } = new URL(playlist.sources.shakadash?.src || playlist.sources.shakahls?.src);
+      const sourceUrl = playlist.sources.shakadash?.src || playlist.sources.shakahls?.src;
+      const { searchParams } = new URL(sourceUrl);
       const masterUrl = `${KINESCOPE_MASTER_PLAYLIST_URL.replace('{video_id}', id)}?${searchParams.toString()}`;
-      const manifestUrl = id
-        ? masterUrl
-        : playlist.sources.shakadash?.src || playlist.sources.shakahls?.src;
+      const manifestUrl = id ? masterUrl : sourceUrl;
+      const details = {};
 
       if (widevine) {
-        drm.server = widevine.licenseUrl;
+        details.drmServer = widevine.licenseUrl;
       } else if (clearkey) {
-        const licenseUrl = clearkey.licenseUrl;
-        const manifest = await fetch(manifestUrl).then((r) => r.text());
+        const manifest = await fetch(manifestUrl).then((manifestResponse) => manifestResponse.text());
         const kid = manifest.split('default_KID="')[1]?.split('"')[0]?.replaceAll('-', '');
         if (!kid) {
           console.error('KID not found');
           return [];
         }
-        const encodedKid = Buffer.from(kid, 'hex').toString('base64').replaceAll('=', '');
-        const response = await fetch(licenseUrl, {
+        const encodedKid = Uint8Array.fromHex(kid).toBase64().replaceAll('=', '');
+        const clearkeyResponse = await fetch(clearkey.licenseUrl, {
           method: 'POST',
-          headers: { Referer: 'https://kinescope.io/' },
+          headers: { Referer: DEFAULT_REFERER },
           body: JSON.stringify({ kids: [encodedKid], type: 'temporary' }),
-        }).then((r) => r.json());
-        const encodedKey = response['keys'][0]['k'];
-        const key = Buffer.from(encodedKey + '==', 'base64').toString('hex');
-        drm.keys = [{ kid, key }];
+        }).then((licenseResponse) => licenseResponse.json());
+        const encodedKey = clearkeyResponse.keys?.[0]?.k;
+        if (!encodedKey) {
+          console.error('ClearKey response is missing a decryption key');
+          return [];
+        }
+        const key = Uint8Array.fromBase64(encodedKey + '==').toHex();
+        details.keys = [{ kid, key }];
       }
 
-      results.push({ id, title: playlist.title || title, source: { url: manifestUrl, drm } });
+      results.push({
+        id,
+        type: selectedEpisodes.length || playlists.length > 1 ? 'episode' : 'video',
+        title: playlist.title || title,
+        episode: playlists.length > 1 ? episodeNumber : undefined,
+        input: new Input({
+          source: new UrlSource(manifestUrl, {
+            requestInit: headers ? { headers } : undefined,
+          }),
+        }),
+        details,
+      });
     }
 
     return results;
+  },
+
+  drm: {
+    async getLicense(request) {
+      if (request.system !== 'widevine') {
+        throw new Error(`Unsupported DRM system: ${request.system}`);
+      }
+
+      const drmServer = request.entry.details?.drmServer;
+      if (!drmServer) {
+        throw new Error('Kinescope DRM server is missing on the resolved entry');
+      }
+
+      const response = await fetch(drmServer, {
+        method: 'POST',
+        headers: { Referer: DEFAULT_REFERER, 'content-type': 'application/octet-stream' },
+        body: request.data,
+      });
+      return new Uint8Array(await response.arrayBuffer());
+    },
+
+    async getKeys(request) {
+      if (request.system !== 'clearkey') {
+        throw new Error(`Unsupported DRM system: ${request.system}`);
+      }
+      return new Map((request.entry.details?.keys ?? []).map(({ kid, key }) => [kid, key]));
+    },
   },
 });
