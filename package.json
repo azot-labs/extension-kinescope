@@ -30,12 +30,12 @@
     "dist"
   ],
   "scripts": {
-    "dev": "azt dev",
-    "build": "azt build"
+    "dev": "azot dev",
+    "build": "azot build"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
-    "azot": "^5.0.0-alpha.28",
+    "azot": "^5.0.0-alpha.32",
     "typescript": "^6.0.3"
   },
   "engines": {
