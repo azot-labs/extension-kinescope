@@ -25,15 +25,33 @@ const DRM_HEADERS = {
  * Command: streamyx https://kinescope.io/embed/202544377
  */
 
+const getReferer = async (headers) => {
+  const referer = headers.referer || headers.Referer;
+  if (referer) return referer;
+  const response = await prompt("Enter the website where the Kinescope player is located", {
+    form: {
+      referer: {
+        type: "text",
+        title: "Referer",
+        autoFocus: true,
+      },
+    },
+  });
+  return `${new URL(response.referer ?? DEFAULT_REFERER).origin}/`;
+};
+
 export default defineExtension({
   async getEntries({ url, options: args }) {
     const headers = args.header;
-    const response = await fetch(url, { headers });
+    const referer = await getReferer(headers);
+    const response = await fetch(url, { headers: { referer } });
     const data = await response.text();
 
     const title = data.split("<title>")[1]?.split("</title>")[0];
     const playerOptionsString = data.split("playerOptions = ")[1]?.split("};")[0] + "}";
     const playerOptions = eval(`(${playerOptionsString})`);
+
+    if (!playerOptions.playlist) return [];
 
     const selectedEpisodes = Array.from(args.episodes?.values() ?? []).flatMap((seasonEpisodes) =>
       Array.from(seasonEpisodes.values()),
