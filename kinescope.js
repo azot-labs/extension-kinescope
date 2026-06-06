@@ -2,6 +2,14 @@ import { defineExtension } from "azot";
 
 const KINESCOPE_MASTER_PLAYLIST_URL = "https://kinescope.io/{video_id}/master.mpd";
 const DEFAULT_REFERER = "https://kinescope.io/";
+const DRM_HEADERS = {
+  Accept: "*/*",
+  "Accept-Language": "en-AU,en-GB;q=0.9,en-US;q=0.8,en;q=0.7",
+  Origin: "https://kinescope.io",
+  Referer: DEFAULT_REFERER,
+  "User-Agent":
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+};
 
 /**
  * Widevine example on a third-party service:
@@ -102,7 +110,7 @@ export default defineExtension({
 
       const response = await fetch(drmServer, {
         method: "POST",
-        headers: { Referer: DEFAULT_REFERER, "content-type": "application/octet-stream" },
+        headers: DRM_HEADERS,
         body: request.data,
       });
       return new Uint8Array(await response.arrayBuffer());
@@ -110,7 +118,7 @@ export default defineExtension({
 
     async resolveKeys(request) {
       if (request.system !== "clearkey") {
-        throw new Error(`Unsupported DRM system: ${request.system}`);
+        return [];
       }
       return request.resource.entry.context?.keys ?? [];
     },
