@@ -51,7 +51,7 @@ export default defineExtension({
     const playerOptionsString = data.split("playerOptions = ")[1]?.split("};")[0] + "}";
     const playerOptions = eval(`(${playerOptionsString})`);
 
-    if (!playerOptions.playlist) return [];
+    if (!playerOptions?.playlist) return [];
 
     const selectedEpisodes = Array.from(args.episodes?.values() ?? []).flatMap((seasonEpisodes) =>
       Array.from(seasonEpisodes.values()),
