@@ -1,9 +1,10 @@
-import { defineExtension } from 'azot';
+import { defineExtension } from "azot";
 
-const KINESCOPE_BASE_URL = 'https://kinescope.io';
-const KINESCOPE_MASTER_PLAYLIST_URL = 'https://kinescope.io/{video_id}/master.mpd';
-const KINESCOPE_CLEARKEY_LICENSE_URL = 'https://license.kinescope.io/v1/vod/{video_id}/acquire/clearkey?token=';
-const DEFAULT_REFERER = 'https://kinescope.io';
+const KINESCOPE_BASE_URL = "https://kinescope.io";
+const KINESCOPE_MASTER_PLAYLIST_URL = "https://kinescope.io/{video_id}/master.mpd";
+const KINESCOPE_CLEARKEY_LICENSE_URL =
+  "https://license.kinescope.io/v1/vod/{video_id}/acquire/clearkey?token=";
+const DEFAULT_REFERER = "https://kinescope.io";
 
 /**
  * Widevine example on a third-party service:
@@ -25,11 +26,15 @@ export default defineExtension({
     const response = await fetch(url, { headers });
     const data = await response.text();
 
-    const title = data.split('<title>')[1]?.split('</title>')[0];
-    const playerOptionsString = data.split('playerOptions = ')[1]?.split('};')[0] + '}';
+    const title = data.split("<title>")[1]?.split("</title>")[0];
+    const playerOptionsString = data.split("playerOptions = ")[1]?.split("};")[0] + "}";
     const playerOptions = eval(`(${playerOptionsString})`);
 
-    const selectedEpisodes = Array.from(args.episodes.values()).flatMap(seasonEpisodes => Array.from(seasonEpisodes.values()))
+    const selectedEpisodes = args.episodes
+      ? Array.from(args.episodes.values()).flatMap((seasonEpisodes) =>
+          Array.from(seasonEpisodes.values()),
+        )
+      : [];
     const results = [];
     const playlists = playerOptions.playlist ?? [];
 
@@ -42,10 +47,13 @@ export default defineExtension({
       const episodeNumber = index + 1;
       if (selectedEpisodes.length && !selectedEpisodes.includes(episodeNumber)) continue;
 
-      const id = playlist.id || (data.includes('id: "') ? data.split('id: "')[1].split('"')[0] : undefined);
+      const id =
+        playlist.id || (data.includes('id: "') ? data.split('id: "')[1].split('"')[0] : undefined);
 
-      const { searchParams } = new URL(playlist.sources.shakadash?.src || playlist.sources.shakahls?.src);
-      const masterUrl = `${KINESCOPE_MASTER_PLAYLIST_URL.replace('{video_id}', id)}?${searchParams.toString()}`;
+      const { searchParams } = new URL(
+        playlist.sources.shakadash?.src || playlist.sources.shakahls?.src,
+      );
+      const masterUrl = `${KINESCOPE_MASTER_PLAYLIST_URL.replace("{video_id}", id)}?${searchParams.toString()}`;
       const manifestUrl = id
         ? masterUrl
         : playlist.sources.shakadash?.src || playlist.sources.shakahls?.src;
@@ -55,19 +63,19 @@ export default defineExtension({
       } else if (clearkey) {
         const licenseUrl = clearkey.licenseUrl;
         const manifest = await fetch(manifestUrl).then((r) => r.text());
-        const kid = manifest.split('default_KID="')[1]?.split('"')[0]?.replaceAll('-', '');
+        const kid = manifest.split('default_KID="')[1]?.split('"')[0]?.replaceAll("-", "");
         if (!kid) {
-          console.error('KID not found');
+          console.error("KID not found");
           return [];
         }
-        const encodedKid = Buffer.from(kid, 'hex').toString('base64').replaceAll('=', '');
+        const encodedKid = Buffer.from(kid, "hex").toString("base64").replaceAll("=", "");
         const response = await fetch(licenseUrl, {
-          method: 'POST',
-          headers: { Referer: 'https://kinescope.io/' },
-          body: JSON.stringify({ kids: [encodedKid], type: 'temporary' }),
+          method: "POST",
+          headers: { Referer: "https://kinescope.io/" },
+          body: JSON.stringify({ kids: [encodedKid], type: "temporary" }),
         }).then((r) => r.json());
-        const encodedKey = response['keys'][0]['k'];
-        const key = Buffer.from(encodedKey + '==', 'base64').toString('hex');
+        const encodedKey = response["keys"][0]["k"];
+        const key = Buffer.from(encodedKey + "==", "base64").toString("hex");
         drm.keys = [{ kid, key }];
       }
 
