@@ -97,7 +97,12 @@ export default defineExtension({
         drm.keys = [{ kid, key }];
       }
 
-      results.push({ id, title: playlist.title || title, source: { url: manifestUrl, drm } });
+      const hasDrm = drm.server || drm.keys;
+      results.push({
+        id,
+        title: playlist.title || title,
+        source: { url: manifestUrl, ...(hasDrm && { drm }) },
+      });
     }
 
     return results;
