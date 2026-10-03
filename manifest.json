@@ -1,0 +1,5 @@
+{
+  "manifestVersion": 1,
+  "displayName": "Kinescope",
+  "matches": ["https://*.kinescope.io/*"]
+}

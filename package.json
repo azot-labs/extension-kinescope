@@ -1,18 +1,11 @@
 {
   "name": "kinescope",
   "version": "1.0.4",
-  "homepage": "https://kinescope.ru/",
-  "config": {
-    "title": "Kinescope",
-    "tag": "KS",
-    "icon": "https://ucarecdn.com/79bc98f6-a970-4f04-b0c0-eff36d6a2b4a/",
-    "permissions": [
-      "drm"
-    ]
-  },
   "keywords": [
     "video-hostings"
   ],
+  "homepage": "https://kinescope.ru/",
+  "license": "MIT",
   "author": {
     "name": "Azot",
     "url": "https://azot.mov/"
@@ -24,11 +17,10 @@
       "url": "https://github.com/vitalygashkov"
     }
   ],
-  "license": "MIT",
-  "main": "dist/kinescope.cjs",
   "files": [
     "dist"
   ],
+  "main": "dist/kinescope.cjs",
   "scripts": {
     "dev": "azt dev",
     "build": "azt build"
@@ -37,6 +29,13 @@
     "@types/node": "^25.5.0",
     "azot": "^5.0.0-alpha.18",
     "typescript": "^5.9.3"
+  },
+  "config": {
+    "icon": "https://play-lh.googleusercontent.com/BbM-3OuPqW0LX9ljK0e-9-Cu_S70bVFrBxbHRs9hYSmtqx3B6cEgIki_5VhtkD5nh70=s188-rw",
+    "permissions": [
+      "drm"
+    ],
+    "title": "Kinescope"
   },
   "engines": {
     "azot": ">=4.3.38"
